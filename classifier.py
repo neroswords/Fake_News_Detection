@@ -28,6 +28,9 @@ from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
 from keras.layers import LSTM, Embedding, SpatialDropout1D, Dense
 from keras import Sequential
+from keras.callbacks import EarlyStopping
+from keras.wrappers.scikit_learn import KerasRegressor
+import tensorflow as tf
 
 #string to test
 doc_new = ['obama is running for president in 2016']
@@ -47,22 +50,23 @@ np.mean(predicted_nb == DataPrep.test_news['Label'])
 
 MAX_NB_WORDS = 50000
 EMBEDDING_DIM = 100
-
-lstm_model = Sequential()
-lstm_model.add(Embedding(MAX_NB_WORDS, EMBEDDING_DIM, input_length=DataPrep.train_news['Statement'].shape))
-lstm_model.add(SpatialDropout1D(0.2))
-lstm_model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
-lstm_model.add(Dense(13, activation='softmax'))
-lstm_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-
+epochs = 5
+batch_size = 64
+print(type(DataPrep.train_news))
+# statement = np.asarray(DataPrep.train_news['Statement']).reshape((-1,1))
+# label = np.asarray(DataPrep.train_news['Label']).reshape((-1,1))
+model = Sequential()
+model.add(Embedding(MAX_NB_WORDS, EMBEDDING_DIM, input_length=DataPrep.train_news.shape[0]))
+model.add(SpatialDropout1D(0.2))
+model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
+model.add(Dense(24, input_shape=DataPrep.train_news.shape, activation='relu'))
+model.add(Dense(1, activation='softmax'))
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+history = model.fit(DataPrep.train_news['Statement'], DataPrep.train_news['Label'], epochs=epochs, batch_size=batch_size,validation_split=0.1)
+model.save('LSTM_model.h5')
+# lstm_model = KerasRegressor(build_fn=create_model,verbose=0)
 # LSTM
-lstm_pipeline = Pipeline([
-        ('lstmCV',FeatureSelection.countV),
-        ('lstm_clf',lstm_model)])
 
-lstm_pipeline.fit(DataPrep.train_news['Statement'],DataPrep.train_news['Label'])
-predicted_lstm = lstm_pipeline.predict(DataPrep.test_news['Statement'])
-np.mean(predicted_lstm == DataPrep.test_news['Label'])
 
 
 #building classifier using logistic regression
