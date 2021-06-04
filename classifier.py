@@ -31,6 +31,7 @@ from keras import Sequential
 from keras.callbacks import EarlyStopping
 from keras.wrappers.scikit_learn import KerasRegressor
 import tensorflow as tf
+from keras.preprocessing import sequence
 
 #string to test
 doc_new = ['obama is running for president in 2016']
@@ -52,7 +53,12 @@ MAX_NB_WORDS = 50000
 EMBEDDING_DIM = 100
 epochs = 5
 batch_size = 64
-print(type(DataPrep.train_news))
+# print('-------------------------------------------------')
+# print(type(DataPrep.train_news))
+# print('-------------------------------------------------')
+# print(DataPrep.train_news['Statement'].values)
+x_train = sequence.pad_sequences(DataPrep.train_news['Statement'].values,maxlen=500)
+# y_train = sequence.pad_sequences(DataPrep.train_news['Label'],maxlen=500)
 # statement = np.asarray(DataPrep.train_news['Statement']).reshape((-1,1))
 # label = np.asarray(DataPrep.train_news['Label']).reshape((-1,1))
 model = Sequential()
@@ -62,7 +68,7 @@ model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
 model.add(Dense(24, input_shape=DataPrep.train_news.shape, activation='relu'))
 model.add(Dense(1, activation='softmax'))
 model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-history = model.fit(DataPrep.train_news['Statement'], DataPrep.train_news['Label'], epochs=epochs, batch_size=batch_size,validation_split=0.1)
+history = model.fit(x_train, DataPrep.train_news['Label'], epochs=epochs, batch_size=batch_size,validation_split=0.1)
 model.save('LSTM_model.h5')
 # lstm_model = KerasRegressor(build_fn=create_model,verbose=0)
 # LSTM
