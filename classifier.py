@@ -32,8 +32,12 @@ from keras.callbacks import EarlyStopping
 from keras.wrappers.scikit_learn import KerasRegressor
 import tensorflow as tf
 from keras.preprocessing import sequence
+<<<<<<< HEAD
 from keras.preprocessing.text import Tokenizer
 from keras.preprocessing.sequence import pad_sequences
+=======
+
+>>>>>>> 9bc6056e9453afe217e0f9b5e6245db5fccd6963
 #string to test
 doc_new = ['obama is running for president in 2016']
 
@@ -54,6 +58,7 @@ MAX_NB_WORDS = 50000
 EMBEDDING_DIM = 100
 epochs = 5
 batch_size = 64
+<<<<<<< HEAD
 t= Tokenizer()
 t.fit_on_texts(DataPrep.train_news['Statement'].values)
 vocab_size = len(t.word_index)+1
@@ -94,6 +99,25 @@ lstm_model.add(Dense(1, activation='softmax'))
 lstm_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 history = lstm_model.fit(padded_docs, DataPrep.train_news['Label'].values, epochs=epochs, batch_size=batch_size,validation_split=0.1)
 lstm_model.save('LSTM_model.h5')
+=======
+# print('-------------------------------------------------')
+# print(type(DataPrep.train_news))
+# print('-------------------------------------------------')
+# print(DataPrep.train_news['Statement'].values)
+x_train = sequence.pad_sequences(DataPrep.train_news['Statement'].values,maxlen=500)
+# y_train = sequence.pad_sequences(DataPrep.train_news['Label'],maxlen=500)
+# statement = np.asarray(DataPrep.train_news['Statement']).reshape((-1,1))
+# label = np.asarray(DataPrep.train_news['Label']).reshape((-1,1))
+model = Sequential()
+model.add(Embedding(MAX_NB_WORDS, EMBEDDING_DIM, input_length=DataPrep.train_news.shape[0]))
+model.add(SpatialDropout1D(0.2))
+model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
+model.add(Dense(24, input_shape=DataPrep.train_news.shape, activation='relu'))
+model.add(Dense(1, activation='softmax'))
+model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+history = model.fit(x_train, DataPrep.train_news['Label'], epochs=epochs, batch_size=batch_size,validation_split=0.1)
+model.save('LSTM_model.h5')
+>>>>>>> 9bc6056e9453afe217e0f9b5e6245db5fccd6963
 # lstm_model = KerasRegressor(build_fn=create_model,verbose=0)
 # LSTM
 
