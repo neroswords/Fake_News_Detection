@@ -26,12 +26,14 @@ from sklearn.model_selection import learning_curve
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
-from keras.layers import LSTM, Embedding, SpatialDropout1D, Dense
+from keras.layers import LSTM, Embedding, SpatialDropout1D, Dense, Flatten
 from keras import Sequential
 from keras.callbacks import EarlyStopping
 from keras.wrappers.scikit_learn import KerasRegressor
 import tensorflow as tf
-
+from keras.preprocessing import sequence
+from keras.preprocessing.text import Tokenizer
+from keras.preprocessing.sequence import pad_sequences
 #string to test
 doc_new = ['obama is running for president in 2016']
 
@@ -52,18 +54,46 @@ MAX_NB_WORDS = 50000
 EMBEDDING_DIM = 100
 epochs = 5
 batch_size = 64
-print(type(DataPrep.train_news))
+t= Tokenizer()
+t.fit_on_texts(DataPrep.train_news['Statement'].values)
+vocab_size = len(t.word_index)+1
+encoded_docs = t.texts_to_sequences(DataPrep.train_news['Statement'].values)
+
+padded_docs = pad_sequences(encoded_docs, maxlen=5, padding="post")
+embeddings_index = dict()
+f= open('glove.6B.50d.txt',"r",encoding='utf-8')
+for line in f:
+        values = line.split()
+        word = values[0]
+        coefs = np.asarray(values[1:], dtype='float32')
+        embeddings_index[word] = coefs
+f.close()
+embedding_matrix = np.zeros((vocab_size,50))
+for word,i in t.word_index.items():
+        embedding_vector = embeddings_index.get(word)
+        if embedding_vector is not None:
+                embedding_matrix[i] = embedding_vector
+model = Sequential()
+e = Embedding(vocab_size, 50, weights=[embedding_matrix], input_length=4, trainable = False)
+model.add(e)
+model.add(Flatten())
+model.add(Dense(1, activation='sigmoid'))
+model.compile(optimizer='sgd', loss='binary_crossentropy', metrics=['accuracy'])
+print(model.summary())
+model.fit(padded_docs, DataPrep.train_news['Label'].values, epochs=50, verbose=0)
+loss, accuracy = model.evaluate(padded_docs, DataPrep.train_news['Label'].values, verbose=0)
+print('accuracy: %f' %(accuracy*100))
 # statement = np.asarray(DataPrep.train_news['Statement']).reshape((-1,1))
 # label = np.asarray(DataPrep.train_news['Label']).reshape((-1,1))
-model = Sequential()
-model.add(Embedding(MAX_NB_WORDS, EMBEDDING_DIM, input_length=DataPrep.train_news.shape[0]))
-model.add(SpatialDropout1D(0.2))
-model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
-model.add(Dense(24, input_shape=DataPrep.train_news.shape, activation='relu'))
-model.add(Dense(1, activation='softmax'))
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-history = model.fit(DataPrep.train_news['Statement'], DataPrep.train_news['Label'], epochs=epochs, batch_size=batch_size,validation_split=0.1)
-model.save('LSTM_model.h5')
+lstm_model = Sequential()
+lstm_model.add(Embedding(vocab_size, EMBEDDING_DIM, input_length=DataPrep.train_news.shape[0]))
+lstm_model.add(SpatialDropout1D(0.2))
+lstm_model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
+lstm_model.add(Dense(24, input_shape=DataPrep.train_news.shape, activation='relu'))
+lstm_model.add(Dense(1, activation='softmax'))
+lstm_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+history = lstm_model.fit(padded_docs, DataPrep.train_news['Label'].values, epochs=epochs, batch_size=batch_size,validation_split=0.1)
+lstm_model.save('LSTM_model.h5')
 # lstm_model = KerasRegressor(build_fn=create_model,verbose=0)
 # LSTM
 
