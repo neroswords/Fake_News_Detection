@@ -35,7 +35,6 @@ from tensorflow.keras.preprocessing import sequence
 from tensorflow.keras.preprocessing.text import Tokenizer
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 #string to test
-doc_new = ['obama is running for president in 2016']
 
 #the feature selection has been done in FeatureSelection.py module. here we will create models using those features for prediction
 
@@ -50,17 +49,15 @@ nb_pipeline.fit(DataPrep.train_news['Statement'],DataPrep.train_news['Label'])
 predicted_nb = nb_pipeline.predict(DataPrep.test_news['Statement'])
 np.mean(predicted_nb == DataPrep.test_news['Label'])
 
-MAX_NB_WORDS = 50000
-EMBEDDING_DIM = 100
+#building classifier using LSTM
 epochs = 5
 batch_size = 64
 t= Tokenizer()
 t.fit_on_texts(DataPrep.train_news['Statement'].values)
-# t.save('Tokenizer_model.h5')
 vocab_size = len(t.word_index)+1
 encoded_docs = t.texts_to_sequences(DataPrep.train_news['Statement'].values)
 
-padded_docs = pad_sequences(encoded_docs, maxlen=4, padding="post")
+padded_docs = pad_sequences(encoded_docs, maxlen=100, padding="post")
 embeddings_index = dict()
 f= open('glove.6B.50d.txt',"r",encoding='utf-8')
 for line in f:
@@ -74,37 +71,20 @@ for word,i in t.word_index.items():
         embedding_vector = embeddings_index.get(word)
         if embedding_vector is not None:
                 embedding_matrix[i] = embedding_vector
-# model = Sequential()
-# model.add(Embedding(vocab_size, 50, weights=[embedding_matrix], input_length=4, trainable = False))
-# model.add(Flatten())
-# model.add(Dense(1, activation='sigmoid'))
-# model.compile(optimizer='sgd', loss='binary_crossentropy', metrics=['accuracy'])
-# print(model.summary())
-# model.fit(padded_docs, DataPrep.train_news['Label'].values, epochs=50, verbose=0)
-# # output = model.predict(padded_docs)
-# loss, accuracy = model.evaluate(padded_docs, DataPrep.train_news['Label'].values, verbose=0)
-# print('accuracy: %f' %(accuracy*100))
-# model.save('Embedding_model.h5')
-# statement = np.asarray(DataPrep.train_news['Statement']).reshape((-1,1))
-# label = np.asarray(DataPrep.train_news['Label']).reshape((-1,1))
-# print(DataPrep.train_news['Label'].values.astype('float32'))
+
 lstm_model = Sequential()
-lstm_model.add(Embedding(vocab_size, 50, weights=[embedding_matrix], input_length=4, trainable = False))
+lstm_model.add(Embedding(vocab_size, 50, weights=[embedding_matrix], input_length=100, trainable = False))
 lstm_model.add(SpatialDropout1D(0.2))
 lstm_model.add(LSTM(128, dropout=0.2, recurrent_dropout=0.2))
 lstm_model.add(Dense(64, input_shape=DataPrep.train_news.shape, activation='relu'))
 lstm_model.add(Dense(32, input_shape=DataPrep.train_news.shape, activation='relu'))
 lstm_model.add(Dense(1, activation='sigmoid'))
 lstm_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-history = lstm_model.fit(padded_docs, DataPrep.train_news['Label'].values, epochs=epochs, batch_size=batch_size,validation_split=0.3)
+history = lstm_model.fit(padded_docs, DataPrep.train_news['Label'].values, epochs=epochs, batch_size=batch_size,validation_split=0.1)
 loss, accuracy = lstm_model.evaluate(padded_docs, DataPrep.train_news['Label'].values)
 print('accuracy: %f' %(accuracy*100))
-# test = (lstm_model.predict(padded_docs) >= 0.5).astype(int)
-# print(test)
-lstm_model.save('LSTM_model.h5')
-# lstm_model = KerasRegressor(build_fn=create_model,verbose=0)
-# LSTM
 
+lstm_model.save('LSTM_model.h5')
 
 
 #building classifier using logistic regression
@@ -400,8 +380,8 @@ has almost similar performance as n-gram model so logistic regression will be ou
 """
 
 #saving best model to the disk
-model_file = 'final_model.sav'
-pickle.dump(logR_pipeline_ngram,open(model_file,'wb'))
+pickle.dump(logR_pipeline_final,open("logistic.sav",'wb'))
+pickle.dump(random_forest_final,open("randomforest.sav",'wb'))
 
 
 #Plotting learing curve
