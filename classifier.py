@@ -26,18 +26,14 @@ from sklearn.model_selection import learning_curve
 import matplotlib.pyplot as plt
 from sklearn.metrics import precision_recall_curve
 from sklearn.metrics import average_precision_score
-from keras.layers import LSTM, Embedding, SpatialDropout1D, Dense, Flatten
-from keras import Sequential
-from keras.callbacks import EarlyStopping
-from keras.wrappers.scikit_learn import KerasRegressor
+from tensorflow.keras.layers import LSTM, Embedding, SpatialDropout1D, Dense, Flatten
+from tensorflow.keras import Sequential
+from tensorflow.keras.callbacks import EarlyStopping
+from tensorflow.keras.wrappers.scikit_learn import KerasRegressor
 import tensorflow as tf
-from keras.preprocessing import sequence
-<<<<<<< HEAD
-from keras.preprocessing.text import Tokenizer
-from keras.preprocessing.sequence import pad_sequences
-=======
-
->>>>>>> 9bc6056e9453afe217e0f9b5e6245db5fccd6963
+from tensorflow.keras.preprocessing import sequence
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
 #string to test
 doc_new = ['obama is running for president in 2016']
 
@@ -60,10 +56,11 @@ epochs = 5
 batch_size = 64
 t= Tokenizer()
 t.fit_on_texts(DataPrep.train_news['Statement'].values)
+# t.save('Tokenizer_model.h5')
 vocab_size = len(t.word_index)+1
 encoded_docs = t.texts_to_sequences(DataPrep.train_news['Statement'].values)
 
-padded_docs = pad_sequences(encoded_docs, maxlen=5, padding="post")
+padded_docs = pad_sequences(encoded_docs, maxlen=4, padding="post")
 embeddings_index = dict()
 f= open('glove.6B.50d.txt',"r",encoding='utf-8')
 for line in f:
@@ -77,26 +74,33 @@ for word,i in t.word_index.items():
         embedding_vector = embeddings_index.get(word)
         if embedding_vector is not None:
                 embedding_matrix[i] = embedding_vector
-model = Sequential()
-e = Embedding(vocab_size, 50, weights=[embedding_matrix], input_length=4, trainable = False)
-model.add(e)
-model.add(Flatten())
-model.add(Dense(1, activation='sigmoid'))
-model.compile(optimizer='sgd', loss='binary_crossentropy', metrics=['accuracy'])
-print(model.summary())
-model.fit(padded_docs, DataPrep.train_news['Label'].values, epochs=50, verbose=0)
-loss, accuracy = model.evaluate(padded_docs, DataPrep.train_news['Label'].values, verbose=0)
-print('accuracy: %f' %(accuracy*100))
+# model = Sequential()
+# model.add(Embedding(vocab_size, 50, weights=[embedding_matrix], input_length=4, trainable = False))
+# model.add(Flatten())
+# model.add(Dense(1, activation='sigmoid'))
+# model.compile(optimizer='sgd', loss='binary_crossentropy', metrics=['accuracy'])
+# print(model.summary())
+# model.fit(padded_docs, DataPrep.train_news['Label'].values, epochs=50, verbose=0)
+# # output = model.predict(padded_docs)
+# loss, accuracy = model.evaluate(padded_docs, DataPrep.train_news['Label'].values, verbose=0)
+# print('accuracy: %f' %(accuracy*100))
+# model.save('Embedding_model.h5')
 # statement = np.asarray(DataPrep.train_news['Statement']).reshape((-1,1))
 # label = np.asarray(DataPrep.train_news['Label']).reshape((-1,1))
+# print(DataPrep.train_news['Label'].values.astype('float32'))
 lstm_model = Sequential()
-lstm_model.add(Embedding(vocab_size, EMBEDDING_DIM, input_length=DataPrep.train_news.shape[0]))
+lstm_model.add(Embedding(vocab_size, 50, weights=[embedding_matrix], input_length=4, trainable = False))
 lstm_model.add(SpatialDropout1D(0.2))
-lstm_model.add(LSTM(100, dropout=0.2, recurrent_dropout=0.2))
-lstm_model.add(Dense(24, input_shape=DataPrep.train_news.shape, activation='relu'))
-lstm_model.add(Dense(1, activation='softmax'))
+lstm_model.add(LSTM(128, dropout=0.2, recurrent_dropout=0.2))
+lstm_model.add(Dense(64, input_shape=DataPrep.train_news.shape, activation='relu'))
+lstm_model.add(Dense(32, input_shape=DataPrep.train_news.shape, activation='relu'))
+lstm_model.add(Dense(1, activation='sigmoid'))
 lstm_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-history = lstm_model.fit(padded_docs, DataPrep.train_news['Label'].values, epochs=epochs, batch_size=batch_size,validation_split=0.1)
+history = lstm_model.fit(padded_docs, DataPrep.train_news['Label'].values, epochs=epochs, batch_size=batch_size,validation_split=0.3)
+loss, accuracy = lstm_model.evaluate(padded_docs, DataPrep.train_news['Label'].values)
+print('accuracy: %f' %(accuracy*100))
+# test = (lstm_model.predict(padded_docs) >= 0.5).astype(int)
+# print(test)
 lstm_model.save('LSTM_model.h5')
 # lstm_model = KerasRegressor(build_fn=create_model,verbose=0)
 # LSTM
@@ -442,7 +446,7 @@ pickle.dump(logR_pipeline_ngram,open(model_file,'wb'))
 #     plt.show()
 
 
-# #below command will plot learing curves for each of the classifiers
+# # #below command will plot learing curves for each of the classifiers
 # plot_learing_curve(logR_pipeline_ngram,"Naive-bayes Classifier")
 # plot_learing_curve(nb_pipeline_ngram,"LogisticRegression Classifier")
 # plot_learing_curve(svm_pipeline_ngram,"SVM Classifier")
@@ -456,26 +460,26 @@ pickle.dump(logR_pipeline_ngram,open(model_file,'wb'))
 # """
 
 
-# #plotting Precision-Recall curve
-# def plot_PR_curve(classifier):
+#plotting Precision-Recall curve
+def plot_PR_curve(classifier):
     
-#     precision, recall, thresholds = precision_recall_curve(DataPrep.test_news['Label'], classifier)
-#     average_precision = average_precision_score(DataPrep.test_news['Label'], classifier)
+    precision, recall, thresholds = precision_recall_curve(DataPrep.test_news['Label'], classifier)
+    average_precision = average_precision_score(DataPrep.test_news['Label'], classifier)
     
-#     plt.step(recall, precision, color='b', alpha=0.2,
-#              where='post')
-#     plt.fill_between(recall, precision, step='post', alpha=0.2,
-#                      color='b')
+    plt.step(recall, precision, color='b', alpha=0.2,
+             where='post')
+    plt.fill_between(recall, precision, step='post', alpha=0.2,
+                     color='b')
     
-#     plt.xlabel('Recall')
-#     plt.ylabel('Precision')
-#     plt.ylim([0.0, 1.05])
-#     plt.xlim([0.0, 1.0])
-#     plt.title('2-class Random Forest Precision-Recall curve: AP={0:0.2f}'.format(
-#               average_precision))
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.ylim([0.0, 1.05])
+    plt.xlim([0.0, 1.0])
+    plt.title('2-class Random Forest Precision-Recall curve: AP={0:0.2f}'.format(
+              average_precision))
     
-# plot_PR_curve(predicted_LogR_ngram)
-# plot_PR_curve(predicted_rf_ngram)
+plot_PR_curve(predicted_LogR_ngram)
+plot_PR_curve(predicted_rf_ngram)
 
 
 # """
