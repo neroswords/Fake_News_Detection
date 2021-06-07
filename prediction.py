@@ -7,17 +7,17 @@ Created on Mon Dec  4 17:45:40 2017
 
 import pickle
 import tkinter as tk
-from tensorflow.keras.preprocessing.text import Tokenizer
-from tensorflow.keras.preprocessing.sequence import pad_sequences
-from tensorflow.keras.models import load_model
-import DataPrep
+# from tensorflow.keras.preprocessing.text import Tokenizer
+# from tensorflow.keras.preprocessing.sequence import pad_sequences
+# from tensorflow.keras.models import load_model
+# import DataPrep
 
 H = 600 # กำหนดค่าตัวแปรความสูงหน้าต่างโปรแกรม
 W = 800 # ตัวแปรความกว้าง
 
 load_logR_pipeline_ngram_model = pickle.load(open('logistic.sav', 'rb'))
-load_RF_pipeline_ngram_model = pickle.load(open('randomforest.sav', 'rb'))
-load_LSTM_model = load_model('LSTM_model.h5')
+# load_RF_pipeline_ngram_model = pickle.load(open('randomforest.sav', 'rb'))
+# load_LSTM_model = load_model('LSTM_model.h5')
 
 root = tk.Tk()
 
@@ -49,17 +49,17 @@ def delete_text():
 #function to run for prediction
 def detecting_fake_news(var):    
 #retrieving the best model for prediction call
-    t= Tokenizer()
-    t.fit_on_texts(DataPrep.train_news['Statement'].values)
-    vocab_size = len(t.word_index)+1
-    encoded_docs = t.texts_to_sequences([var])
-    padded_docs = pad_sequences(encoded_docs, maxlen=4, padding="post")
+    # t= Tokenizer()
+    # t.fit_on_texts(DataPrep.train_news['Statement'].values)
+    # vocab_size = len(t.word_index)+1
+    # encoded_docs = t.texts_to_sequences([var])
+    # padded_docs = pad_sequences(encoded_docs, maxlen=4, padding="post")
 
-    lstm_prediction = (load_LSTM_model.predict(padded_docs)>= 0.5).astype(int)
+    # lstm_prediction = (load_LSTM_model.predict(padded_docs)>= 0.5).astype(int)
     logR_prediction = load_logR_pipeline_ngram_model.predict([var])
-    Rf_prediction = load_RF_pipeline_ngram_model.predict([var])
+    # Rf_prediction = load_RF_pipeline_ngram_model.predict([var])
     logR_prob = load_logR_pipeline_ngram_model.predict_proba([var])
-    answer = "Logistic Regression prediction is %s \nRandom Forest prediction is %s \nLong Short Term Memory prediction is %s"%(logR_prediction[0],Rf_prediction[0],bool(lstm_prediction))
+    answer = "prediction this news is %s \nThe truth probability score is %f"%(logR_prediction[0],logR_prob[0][1])
     label['text'] = answer
 
 
