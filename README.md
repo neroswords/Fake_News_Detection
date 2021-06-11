@@ -1,4 +1,4 @@
-# Fake News Detection
+# Somchai Fake News Detection on Social Media: with Content based Method
 
 ### Prerequisites
 
